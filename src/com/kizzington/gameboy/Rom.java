@@ -77,5 +77,11 @@ public class Rom {
         ramSize = (int)Math.pow(4, ramSize)/2;
 
         System.out.println("RAM size: " + ramSize + "KB");
+
+        Main.memory.cartridge = new int[data.length];
+        for(int i = 0; i < data.length; i++) {
+            Main.memory.cartridge[i] = (data[i] & 0xFF);
+        }
+//        Main.memory.cartridge = data;
     }
 }
