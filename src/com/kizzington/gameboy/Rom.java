@@ -21,7 +21,11 @@ public class Rom {
 
     public Rom(String filename) {
         try {
-            loadROM(filename);
+            if(filename == "bios.gb") {
+                loadBIOS(filename);
+            } else {
+                loadROM(filename);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -78,10 +82,22 @@ public class Rom {
 
         System.out.println("RAM size: " + ramSize + "KB");
 
-        Main.memory.cartridge = new int[data.length];
+//        Main.memory.cartridge = new int[data.length];
         for(int i = 0; i < data.length; i++) {
             Main.memory.cartridge[i] = (data[i] & 0xFF);
         }
 //        Main.memory.cartridge = data;
+    }
+
+    public void loadBIOS(String filename) throws IOException {
+        System.out.println("Loading BIOS");
+        Path p = FileSystems.getDefault().getPath("", filename);
+        byte[] data = Files.readAllBytes(p);
+
+//        Main.memory.cartridge = new int[data.length];
+        for(int i = 0; i < data.length; i++) {
+            Main.memory.cartridge[i] = (data[i] & 0xFF);
+        }
+
     }
 }

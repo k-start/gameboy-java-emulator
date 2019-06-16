@@ -6,20 +6,23 @@ public class Registers {
     static int pc, sp;
 
     static void updateHL(int value) {
-        String hex = Integer.toHexString(value);
-        String first = hex.substring(0, 2);
-        String second = hex.substring(2, 4);
-        System.out.println(hex);
+        h = value >> 8;
+        l = value & 0xff;
+    }
 
-        h = (int) Long.parseLong(first, 16);
-        l = (int) Long.parseLong(second, 16);
+    static int getAF() {
+        return (a << 8) | f;
+    }
+
+    static int getBC() {
+        return (b << 8) | c;
+    }
+
+    static int getDE() {
+        return (d << 8) | e;
     }
 
     static int getHL() {
-        String first = Integer.toHexString(h);
-        String second = Integer.toHexString(l);
-        String total = first+second;
-
-        return (int) Long.parseLong(total, 16);
+        return (h << 8) | l;
     }
 }
