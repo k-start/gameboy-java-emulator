@@ -37,9 +37,10 @@ public class CPU {
         instructions[0x21] = new Instruction(OperationEnum.ld, "hl", 2);
         instructions[0x31] = new Instruction(OperationEnum.ld, "sp", 2);
         instructions[0x32] = new Instruction(OperationEnum.ldd, "hl", "a", 0);
+        instructions[0x3E] = new Instruction(OperationEnum.ld, "a", 1);
         instructions[0xAF] = new Instruction(OperationEnum.xor, "a", 0);
         instructions[0xCB] = new Instruction(OperationEnum.cb, "", 1);
-        instructions[0x3E] = new Instruction(OperationEnum.ld, "a", 1);
+        instructions[0xE2] = new Instruction(OperationEnum.ldh, "c", "a", 0);
     }
 
     public void step() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
@@ -77,6 +78,8 @@ public class CPU {
                 case ldd:
                     ldd(instruction.reg, value);
                     break;
+                case ldh:
+                    ldh(instruction.reg, value);
                 case xor:
                     xor(instruction.reg);
                     break;
@@ -128,6 +131,14 @@ public class CPU {
         method.invoke(null);
 
         // maybe modify flags here
+    }
+
+    // save value into address pointed to by (reg + 0xFF00)
+    void ldh(String reg, int val) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        Method method = Registers.class.getMethod("get" + reg.toUpperCase());
+        int address = (int)method.invoke(null) + 0xFF00;
+
+        Main.memory.write(address, val);
     }
 
     // xor a against register
