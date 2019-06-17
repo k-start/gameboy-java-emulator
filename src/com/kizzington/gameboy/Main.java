@@ -1,13 +1,13 @@
 package com.kizzington.gameboy;
 
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.lang.reflect.InvocationTargetException;
 
 public class Main {
 
     public String filename = "bios.gb";
+
+    public static boolean debugMode = false;
 
     public static Main main;
     public static Rom rom;
@@ -31,46 +31,22 @@ public class Main {
         memory = new Memory();
         rom = new Rom(filename);
 
-        frame = new JFrame();
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        if(debugMode) {
+            frame = new JFrame();
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        button = new JButton("step");
-        button.setBounds(10,10,360, 40);
+            button = new JButton("step");
+            button.setBounds(10, 10, 360, 40);
 
-        label = new JTextArea("test\ntest");
-        label.setBounds( 10, 60, 360, 280);
+            label = new JTextArea("test\ntest");
+            label.setBounds(10, 60, 360, 280);
 
-        try {
-            cpu.step();
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            e.printStackTrace();
-        }
+            try {
+                cpu.step();
+            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                e.printStackTrace();
+            }
 
-        label.setText("AF: " + String.format("%04X", Registers.getAF())
-                + "\nBC: " + String.format("%04X", Registers.getBC())
-                + "\nDE: " + String.format("%04X", Registers.getDE())
-                + "\nHL: " + String.format("%04X", Registers.getHL())
-                + "\nSP: " + String.format("%04X", Registers.sp)
-                + "\nPC: " + String.format("%04X", Registers.pc)
-                + "\n"
-                + "\nIME: " + String.format("%04X", Registers.ime)
-                + "\n"
-                + "\nZ: " + cpu.flagsIsZero()
-                + "\nN: " + cpu.flagsIsNegative()
-                + "\nH: " + cpu.flagsIsHalfCarry()
-                + "\nC: " + cpu.flagsIsCarry());
-
-        frame.add(button);
-        frame.add(label);
-        frame.setLayout(null);
-        frame.setTitle("Gameboy Emulator");
-        frame.setVisible(true);
-        frame.setSize(400,400);
-//        frame.pack();
-        frame.setLocationRelativeTo(null);
-
-
-        button.addActionListener(fn -> {
             label.setText("AF: " + String.format("%04X", Registers.getAF())
                     + "\nBC: " + String.format("%04X", Registers.getBC())
                     + "\nDE: " + String.format("%04X", Registers.getDE())
@@ -85,14 +61,39 @@ public class Main {
                     + "\nH: " + cpu.flagsIsHalfCarry()
                     + "\nC: " + cpu.flagsIsCarry());
 
-            try {
-                cpu.step();
-            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-                e.printStackTrace();
-            }
-        });
+            frame.add(button);
+            frame.add(label);
+            frame.setLayout(null);
+            frame.setTitle("Gameboy Emulator");
+            frame.setVisible(true);
+            frame.setSize(400, 400);
+            frame.setLocationRelativeTo(null);
 
-//        run();
+
+            button.addActionListener(fn -> {
+                label.setText("AF: " + String.format("%04X", Registers.getAF())
+                        + "\nBC: " + String.format("%04X", Registers.getBC())
+                        + "\nDE: " + String.format("%04X", Registers.getDE())
+                        + "\nHL: " + String.format("%04X", Registers.getHL())
+                        + "\nSP: " + String.format("%04X", Registers.sp)
+                        + "\nPC: " + String.format("%04X", Registers.pc)
+                        + "\n"
+                        + "\nIME: " + String.format("%04X", Registers.ime)
+                        + "\n"
+                        + "\nZ: " + cpu.flagsIsZero()
+                        + "\nN: " + cpu.flagsIsNegative()
+                        + "\nH: " + cpu.flagsIsHalfCarry()
+                        + "\nC: " + cpu.flagsIsCarry());
+
+                try {
+                    cpu.step();
+                } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                    e.printStackTrace();
+                }
+            });
+        } else {
+            run();
+        }
     }
 
     public void run() {

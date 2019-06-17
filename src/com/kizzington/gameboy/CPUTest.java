@@ -88,6 +88,9 @@ public class CPUTest {
             }
         } else {
             System.out.println("Unknown Instruction: "  + String.format("0x%02X", instructionHex));
+            if(!Main.debugMode) {
+                System.exit(0);
+            }
         }
 
 
