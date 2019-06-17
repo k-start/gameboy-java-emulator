@@ -181,7 +181,7 @@ public class CPU {
 
             // LD HL,nn
             case 0x21:
-                Registers.updateHL(Main.memory.readShort(Registers.pc));
+                Registers.setHL(Main.memory.readShort(Registers.pc));
                 Registers.pc += 2;
                 break;
 
@@ -210,7 +210,7 @@ public class CPU {
             // LDD (HL),A
             case 0x32:
                 Main.memory.write(Registers.getHL(), Registers.a);
-                Registers.updateHL(Registers.getHL()-1);
+                Registers.setHL(Registers.getHL()-1);
                 break;
 
             // INC A

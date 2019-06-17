@@ -3,6 +3,7 @@ package com.kizzington.gameboy;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.lang.reflect.InvocationTargetException;
 
 public class Main {
 
@@ -12,6 +13,7 @@ public class Main {
     public static Rom rom;
     public static Memory memory;
     public static CPUTest cpu;
+    public static CB cb;
 
     public boolean running = true;
 
@@ -25,6 +27,7 @@ public class Main {
 
     public Main(){
         cpu = new CPUTest();
+        cb = new CB();
         memory = new Memory();
         rom = new Rom(filename);
 
@@ -37,7 +40,11 @@ public class Main {
         label = new JTextArea("test\ntest");
         label.setBounds( 10, 60, 360, 280);
 
-        cpu.step();
+        try {
+            cpu.step();
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            e.printStackTrace();
+        }
 
         label.setText("AF: " + String.format("%04X", Registers.getAF())
                 + "\nBC: " + String.format("%04X", Registers.getBC())
@@ -78,7 +85,11 @@ public class Main {
                     + "\nH: " + cpu.flagsIsHalfCarry()
                     + "\nC: " + cpu.flagsIsCarry());
 
-            cpu.step();
+            try {
+                cpu.step();
+            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                e.printStackTrace();
+            }
         });
 
 //        run();
@@ -86,7 +97,11 @@ public class Main {
 
     public void run() {
         while(running) {
-            cpu.step();
+            try {
+                cpu.step();
+            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

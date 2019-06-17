@@ -36,25 +36,18 @@ public class Memory {
     }
 
     int read(int address) {
-//        System.out.println(String.format("%04X", address));
 
         if(address <= 0x7fff) {
-            System.out.println("r cart");
             return cartridge[address];
         } else if(address >= 0x8000 && address <= 0x9fff) {
-            System.out.println("r vram");
             return vram[address - 0x8000];
         } else if(address >= 0xc000 && address <= 0xdfff) {
-            System.out.println("r ram");
             return ram[address - 0xC000];
         } else if(address >= 0xe000 && address <= 0xfdff) {
-            System.out.println("r ram");
             return ram[address - 0xe000];
         } else if(address >= 0xfe00 && address <= 0xfeff) {
-            System.out.println("r oam");
             return oam[address - 0xfe00];
         } else if(address >= 0xff80 && address <= 0xfffe) {
-            System.out.println("r zero");
             return zeroPage[address - 0xff80];
         }
 
@@ -67,13 +60,10 @@ public class Memory {
     void write(int address, int value) {
 
         if (address >= 0xc000 && address <= 0xdfff) {
-            System.out.println("w ram");
             ram[address - 0xc000] = value;
         } else if(address >= 0xfe00 && address <= 0xfeff) {
-            System.out.println("w oam");
             oam[address - 0xfe00] = value;
         } else if(address >= 0xff80 && address <= 0xfffe) {
-            System.out.println("w zero");
             zeroPage[address - 0xff80] = value;
         }
     }
