@@ -1,5 +1,8 @@
 package com.kizzington.gameboy;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 public class CPU {
 
     final int FLAGS_ZERO = 0x80;
@@ -9,24 +12,7 @@ public class CPU {
 
     long ticks = 0;
 
-    int instructionTicks[] = {
-            2, 6, 4, 4, 2, 2, 4, 4, 10, 4, 4, 4, 2, 2, 4, 4,
-            2, 6, 4, 4, 2, 2, 4, 4,  4, 4, 4, 4, 2, 2, 4, 4,
-            0, 6, 4, 4, 2, 2, 4, 2,  4, 4, 4, 4, 2, 2, 4, 2,
-            4, 6, 4, 4, 6, 6, 6, 2,  4, 4, 4, 4, 2, 2, 4, 2,
-            2, 2, 2, 2, 2, 2, 4, 2,  2, 2, 2, 2, 2, 2, 4, 2,
-            2, 2, 2, 2, 2, 2, 4, 2,  2, 2, 2, 2, 2, 2, 4, 2,
-            2, 2, 2, 2, 2, 2, 4, 2,  2, 2, 2, 2, 2, 2, 4, 2,
-            4, 4, 4, 4, 4, 4, 2, 4,  2, 2, 2, 2, 2, 2, 4, 2,
-            2, 2, 2, 2, 2, 2, 4, 2,  2, 2, 2, 2, 2, 2, 4, 2,
-            2, 2, 2, 2, 2, 2, 4, 2,  2, 2, 2, 2, 2, 2, 4, 2,
-            2, 2, 2, 2, 2, 2, 4, 2,  2, 2, 2, 2, 2, 2, 4, 2,
-            2, 2, 2, 2, 2, 2, 4, 2,  2, 2, 2, 2, 2, 2, 4, 2,
-            4, 6, 6, 6, 6, 8, 4, 8,  4, 2, 6, 0, 6, 6, 4, 8,
-            4, 6, 6, 0, 6, 8, 4, 8,  4, 8, 6, 0, 6, 0, 4, 8,
-            6, 6, 4, 0, 0, 8, 4, 8,  8, 2, 8, 0, 0, 0, 4, 8,
-            6, 6, 4, 2, 0, 8, 4, 8,  6, 4, 8, 2, 0, 0, 4, 8
-    };
+    public Instruction[] instructions = new Instruction[0xFF];
 
     public CPU() {
         Registers.a = 0x01;
@@ -38,307 +24,160 @@ public class CPU {
         Registers.h = 0x01;
         Registers.l = 0x4d;
         Registers.sp = 0xfffe;
-        Registers.pc = 0x100;
+        Registers.pc = 0x000;
         Registers.ime = 0x00;
 
         Interrupts.master = true;
         Interrupts.enable = false;
         Interrupts.flags = false;
+
+        instructions[0x00] = new Instruction(OperationEnum.nop, "", 0);
+        instructions[0x0E] = new Instruction(OperationEnum.ld, "c", 1);
+        instructions[0x20] = new Instruction(OperationEnum.jr, "nz", 1);
+        instructions[0x21] = new Instruction(OperationEnum.ld, "hl", 2);
+        instructions[0x31] = new Instruction(OperationEnum.ld, "sp", 2);
+        instructions[0x32] = new Instruction(OperationEnum.ldd, "hl", "a", 0);
+        instructions[0xAF] = new Instruction(OperationEnum.xor, "a", 0);
+        instructions[0xCB] = new Instruction(OperationEnum.cb, "", 1);
+        instructions[0x3E] = new Instruction(OperationEnum.ld, "a", 1);
     }
 
-    public void step() {
+    public void step() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 
-        int instruction = Main.memory.read(Registers.pc);
-        Registers.pc++;
+        int instructionHex = Main.memory.read(Registers.pc++);
 
-        if(Registers.pc == 0x2817) {
-            System.out.println("vram");
+        if(instructions[instructionHex] != null && instructions[instructionHex].operation != OperationEnum.unknown) {
+            System.out.println("Instruction: " + String.format("0x%02X", instructionHex));
+
+            Instruction instruction = instructions[instructionHex];
+
+            int value = 0;
+            switch (instruction.cost) {
+                case 0:
+                    // load register into value if exists
+                    if (instruction.reg2 != null) {
+                        Method method = Registers.class.getMethod("get" + instruction.reg2.toUpperCase());
+                        value = (int) method.invoke(null);
+                    }
+                    break;
+                case 1:
+                    value = get8BitImm();
+                    break;
+                case 2:
+                    value = get16BitImm();
+                    break;
+            }
+
+            switch (instruction.operation) {
+                case nop:
+                    break;
+                case ld:
+                    ld(instruction.reg, value);
+                    break;
+                case ldd:
+                    ldd(instruction.reg, value);
+                    break;
+                case xor:
+                    xor(instruction.reg);
+                    break;
+                case cb:
+                    Main.cb.step(value);
+                    break;
+                case jr:
+                    // in this case instruction.reg is actually a condition, not a register name
+                    jr(instruction.reg, value);
+                    break;
+                default:
+                    System.out.println("Unknown Instruction: "  + String.format("0x%02X", instructionHex));
+                    if(!Main.debugMode) {
+                        System.exit(0);
+                    }
+                    break;
+            }
+        } else {
+            System.out.println("Unknown Instruction: "  + String.format("0x%02X", instructionHex));
+            if(!Main.debugMode) {
+                System.exit(0);
+            }
         }
 
-        switch (instruction) {
-            // NOP
-            case 0x00:
-                break;
 
-            // LD (BC),A
-            case 0x02:
-                Main.memory.write(Registers.getBC(), Registers.a);
-                break;
-
-            // DEC B
-            case 0x05:
-                if((Registers.b & 0x0f) != 0) {
-                    flagsClear(FLAGS_HALFCARRY);
-                } else {
-                    flagsSet(FLAGS_HALFCARRY);
-                }
-
-                Registers.b--;
-                if(Registers.b == -1) {
-                    Registers.b = 0xFF;
-                }
-
-                if(Registers.b != 0) {
-                    flagsClear(FLAGS_ZERO);
-                } else {
-                    flagsSet(FLAGS_ZERO);
-                }
-
-                flagsSet(FLAGS_NEGATIVE);
-                break;
-
-            // LD B,n
-            case 0x06:
-                Registers.b = Main.memory.read(Registers.pc);
-                Registers.pc += 1;
-                break;
-
-            // DEC C
-            case 0x0D:
-                if((Registers.c & 0x0f) != 0) {
-                    flagsClear(FLAGS_HALFCARRY);
-                } else {
-                    flagsSet(FLAGS_HALFCARRY);
-                }
-
-                Registers.c--;
-                if(Registers.c == -1) {
-                    Registers.c = 0xFF;
-                }
-
-                if(Registers.c != 0) {
-                    flagsClear(FLAGS_ZERO);
-                } else {
-                    flagsSet(FLAGS_ZERO);
-                }
-
-                flagsSet(FLAGS_NEGATIVE);
-                break;
-
-            // LD C,n
-            case 0x0E:
-                Registers.c = Main.memory.read(Registers.pc);
-                Registers.pc += 1;
-                break;
-
-            // DEC D
-            case 0x15:
-                if((Registers.d & 0x0f) != 0) {
-                    flagsClear(FLAGS_HALFCARRY);
-                } else {
-                    flagsSet(FLAGS_HALFCARRY);
-                }
-
-                Registers.d--;
-                if(Registers.d == -1) {
-                    Registers.d = 0xFF;
-                }
-
-                if(Registers.d != 0) {
-                    flagsClear(FLAGS_ZERO);
-                } else {
-                    flagsSet(FLAGS_ZERO);
-                }
-
-                flagsSet(FLAGS_NEGATIVE);
-                break;
-
-            // LD D,n
-            case 0x16:
-                Registers.d = Main.memory.read(Registers.pc);
-                Registers.pc++;
-                break;
-
-            // RR A
-            case 0x1F:
-                int carry = (flags_isset(FLAGS_CARRY) ? 1 : 0) << 7;
-
-                if((Registers.a & 0x01) != 0){
-                    flagsSet(FLAGS_CARRY);
-                } else {
-                    flagsClear(FLAGS_CARRY);
-                }
-
-                Registers.a >>= 1;
-                Registers.a += carry;
-
-                flagsClear(FLAGS_NEGATIVE | FLAGS_ZERO | FLAGS_HALFCARRY);
-                break;
-
-
-            //
-            case 0x20:
-                if(flagsIsZero()) {
-                    ticks += 8;
-                    Registers.pc++;
-                } else {
-                    Registers.pc += Main.memory.read(Registers.pc);
-                    Registers.pc++;
-                    ticks += 12;
-                }
-
-                break;
-
-            // LD HL,nn
-            case 0x21:
-                Registers.setHL(Main.memory.readShort(Registers.pc));
-                Registers.pc += 2;
-                break;
-
-            // DEC H
-            case 0x25:
-                if((Registers.h & 0x0f) != 0) {
-                    flagsClear(FLAGS_HALFCARRY);
-                } else {
-                    flagsSet(FLAGS_HALFCARRY);
-                }
-
-                Registers.h--;
-                if(Registers.h == -1) {
-                    Registers.h = 0xFF;
-                }
-
-                if(Registers.h != 0) {
-                    flagsClear(FLAGS_ZERO);
-                } else {
-                    flagsSet(FLAGS_ZERO);
-                }
-
-                flagsSet(FLAGS_NEGATIVE);
-                break;
-
-            // LDD (HL),A
-            case 0x32:
-                Main.memory.write(Registers.getHL(), Registers.a);
-                Registers.setHL(Registers.getHL()-1);
-                break;
-
-            // INC A
-            case 0x3c:
-                Registers.a++;
-                break;
-
-            // LD A,n
-            case 0x3E:
-                Registers.a = Main.memory.read(Registers.pc);
-                Registers.pc += 1;
-                break;
-
-            case 0x43:
-                Registers.b = Registers.e;
-                break;
-
-            // XOR A
-            case 0xAF:
-                Registers.a = 0;
-                flagsSet(FLAGS_ZERO);
-                flagsClear(FLAGS_CARRY | FLAGS_NEGATIVE | FLAGS_HALFCARRY);
-                break;
-
-            case 0xC3:
-                Registers.pc = Main.memory.readShort(Registers.pc);
-//                Registers.pc += 2;
-                break;
-
-            // CALL nn
-            case 0xCD:
-                Registers.sp -= 2;
-                Main.memory.writeShort(Registers.sp, Registers.pc);
-                Registers.pc = Main.memory.readShort(Registers.pc);
-                Registers.pc += 2;
-                break;
-
-            // SUB A,n
-            case 0xD6:
-                flagsSet(FLAGS_NEGATIVE);
-                int op1 = Main.memory.read(Registers.pc);
-
-                if(op1 > Registers.a){
-                    flagsSet(FLAGS_CARRY);
-                } else {
-                    flagsClear(FLAGS_CARRY);
-                }
-
-                if((op1 & 0x0f) > (Registers.a & 0x0f)) {
-                    flagsSet(FLAGS_HALFCARRY);
-                } else {
-                    flagsClear(FLAGS_HALFCARRY);
-                }
-
-                Registers.a -= op1;
-
-                if(Registers.a < 0) {
-                    Registers.a = 0xFF + Registers.a;
-                }
-
-                if(Registers.a != 0) {
-                    flagsClear(FLAGS_ZERO);
-                } else {
-                    flagsSet(FLAGS_ZERO);
-                }
-
-                Registers.pc++;
-                break;
-
-            // LDH (n),A
-            case 0xE0:
-                Main.memory.write(0xff00 + Main.memory.read(Registers.pc), Registers.a);
-                Registers.pc++;
-                break;
-
-            // LDH A,(n)
-            case 0xF0:
-                Registers.a = Main.memory.read(0xff00 + Main.memory.read(Registers.pc));
-                Registers.pc++;
-                break;
-
-            // DI
-            case 0xF3:
-                Interrupts.master = false;
-                break;
-
-            // LD SP,HL
-            case 0xF9:
-                Registers.sp = Registers.getHL();
-                break;
-
-            // EI
-            case 0xFB:
-                Interrupts.master = true;
-                break;
-
-            // CP n
-            case 0xFE:
-                flagsSet(FLAGS_NEGATIVE);
-                int op = Main.memory.read(Registers.pc);
-
-                if(Registers.a == op) {
-                    flagsSet(FLAGS_ZERO);
-                } else {
-                    flagsClear(FLAGS_ZERO);
-                }
-
-                if(Registers.a < op) {
-                    flagsSet(FLAGS_CARRY);
-                } else {
-                    flagsClear(FLAGS_CARRY);
-                }
-
-                if(Registers.a > op) {
-                    flagsSet(FLAGS_HALFCARRY);
-                } else {
-                    flagsClear(FLAGS_HALFCARRY);
-                }
-                Registers.pc++;
-                break;
-
-            default:
-                System.out.println("Undefined instruction: "  + String.format("0x%02X", instruction));
-//                System.exit(0);
-        }
-        System.out.println("Instruction: "  + String.format("0x%02X", instruction));
-        ticks += instructionTicks[instruction];
+//        ticks += instructionTicks[instruction];
     }
+
+    // load value into reg
+    void ld(String reg, int val) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        Method method = Registers.class.getMethod("set" + reg.toUpperCase(), int.class);
+        method.invoke(null, val);
+    }
+
+    // save value into address pointed by reg
+    void ld_addr(String reg, int val) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        Method method = Registers.class.getMethod("get" + reg.toUpperCase());
+        int address = (int)method.invoke(null);
+
+        Main.memory.write(address, val);
+    }
+
+    // save value into address pointed by reg and decrease reg
+    void ldd(String reg, int val) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        ld_addr(reg, val);
+
+        //decrement register
+        Method method = Registers.class.getMethod("decrement" + reg.toUpperCase());
+        method.invoke(null);
+
+        // maybe modify flags here
+    }
+
+    // xor a against register
+    void xor(String reg) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        Method method = Registers.class.getMethod("get" + reg.toUpperCase());
+        int value = (int)method.invoke(null);
+
+        Registers.a ^= value;
+
+        if(Registers.a != 0) {
+            flagsClear(FLAGS_ZERO);
+        } else {
+            flagsSet(FLAGS_ZERO);
+        }
+
+        flagsClear(FLAGS_CARRY | FLAGS_NEGATIVE | FLAGS_HALFCARRY);
+    }
+
+    void jr(String condition, int value) {
+        switch (condition.toLowerCase()) {
+            case "":
+                Registers.pc += value;
+                break;
+            case "nz":
+                if(!flagsIsZero()) {
+                    Registers.pc += (byte)value;
+                } else {
+                    // tick cpu
+                }
+                break;
+        }
+    }
+
+
+
+
+
+
+    int get8BitImm() {
+        return Main.memory.read(Registers.pc++);
+    }
+
+    int get16BitImm() {
+        int imm = Main.memory.readShort(Registers.pc);
+        Registers.pc += 2;
+        return imm;
+    }
+
+
+
 
     boolean flagsIsZero() {
         return (Registers.f & FLAGS_ZERO) != 0;

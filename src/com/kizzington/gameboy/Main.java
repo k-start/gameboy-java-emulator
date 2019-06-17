@@ -12,7 +12,7 @@ public class Main {
     public static Main main;
     public static Rom rom;
     public static Memory memory;
-    public static CPUTest cpu;
+    public static CPU cpu;
     public static CB cb;
 
     public boolean running = true;
@@ -26,7 +26,7 @@ public class Main {
     }
 
     public Main(){
-        cpu = new CPUTest();
+        cpu = new CPU();
         cb = new CB();
         memory = new Memory();
         rom = new Rom(filename);
