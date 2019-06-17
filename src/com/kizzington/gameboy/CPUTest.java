@@ -32,12 +32,14 @@ public class CPUTest {
         Interrupts.flags = false;
 
         instructions[0x00] = new Instruction(OperationEnum.nop, "", 0);
+        instructions[0x0E] = new Instruction(OperationEnum.ld, "c", 1);
         instructions[0x20] = new Instruction(OperationEnum.jr, "nz", 1);
         instructions[0x21] = new Instruction(OperationEnum.ld, "hl", 2);
         instructions[0x31] = new Instruction(OperationEnum.ld, "sp", 2);
         instructions[0x32] = new Instruction(OperationEnum.ldd, "hl", "a", 0);
         instructions[0xAF] = new Instruction(OperationEnum.xor, "a", 0);
         instructions[0xCB] = new Instruction(OperationEnum.cb, "", 1);
+        instructions[0x3E] = new Instruction(OperationEnum.ld, "a", 1);
     }
 
     public void step() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
@@ -84,6 +86,12 @@ public class CPUTest {
                 case jr:
                     // in this case instruction.reg is actually a condition, not a register name
                     jr(instruction.reg, value);
+                    break;
+                default:
+                    System.out.println("Unknown Instruction: "  + String.format("0x%02X", instructionHex));
+                    if(!Main.debugMode) {
+                        System.exit(0);
+                    }
                     break;
             }
         } else {
@@ -147,7 +155,7 @@ public class CPUTest {
                 if(!flagsIsZero()) {
                     Registers.pc += (byte)value;
                 } else {
-
+                    // tick cpu
                 }
                 break;
         }
