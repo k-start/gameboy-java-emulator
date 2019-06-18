@@ -1,6 +1,6 @@
 package com.kizzington.gameboy;
 
-import com.kizzington.gameboy.Operators.CB.BIT;
+import com.kizzington.gameboy.Operators.CB.*;
 import com.kizzington.gameboy.Operators.Instruction;
 import com.kizzington.gameboy.Operators.OperandEnum;
 
@@ -9,6 +9,7 @@ public class CB {
     public Instruction[] instructions = new Instruction[0xFF];
 
     public CB() {
+        instructions[0x11] = new RL(OperandEnum.C, 0);
         instructions[0x7C] = new BIT(OperandEnum.H, 7);
     }
 
