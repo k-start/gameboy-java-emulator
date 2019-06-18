@@ -31,6 +31,8 @@ public class CPU {
         Interrupts.flags = false;
 
         instructions[0x00] = new Instruction(0);
+        instructions[0x06] = new Instruction(OperandEnum.B, OperandEnum.n, 1);
+        instructions[0x0C] = new INC(OperandEnum.C, 0);
         instructions[0x0E] = new LD(OperandEnum.C, OperandEnum.n, 1);
         instructions[0x11] = new LD(OperandEnum.DE, OperandEnum.nn, LD.LdType.read, 2);
         instructions[0x1A] = new LD(OperandEnum.A, OperandEnum.DE, LD.LdType.read, 0);
@@ -39,12 +41,14 @@ public class CPU {
         instructions[0x31] = new LD(OperandEnum.SP, OperandEnum.nn, LD.LdType.read, 2);
         instructions[0x32] = new LD(OperandEnum.HL, OperandEnum.A, LD.LdType.write, LD.SpecialType.decrement, 0);
         instructions[0x3E] = new LD(OperandEnum.A, OperandEnum.n, 1);
+        instructions[0x4F] = new LD(OperandEnum.C, OperandEnum.A, 0);
         instructions[0x77] = new LD(OperandEnum.HL, OperandEnum.A, LD.LdType.write, 0);
         instructions[0xAF] = new XOR(OperandEnum.A, 0);
+        instructions[0xC5] = new PUSH(OperandEnum.BC, 0);
         instructions[0xCB] = new Instruction(true);
         instructions[0xCD] = new CALL(OperandEnum.n, 2);
         instructions[0xE0] = new LD(OperandEnum.n, OperandEnum.A, LD.LdType.read, 1);
-        instructions[0xE2] = new LD(OperandEnum.C, OperandEnum.A, LD.LdType.write, 1);
+        instructions[0xE2] = new LD(OperandEnum.C, OperandEnum.A, LD.LdType.write, 0);
     }
 
     public void step() {

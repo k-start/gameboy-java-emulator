@@ -105,8 +105,9 @@ public enum OperandEnum {
     public int getMemoryAddress() {
         int value = getValue();
 
-        if(value <= 0xFF) {
-            value = value + 0xFF00;
+        // If 8-bit return 16-bit address
+        if(this.name().length() == 1) {
+            value = 0xFF00 + value;
         }
         return value;
     }

@@ -29,7 +29,7 @@ public class CALL extends Instruction {
     public void execute() {
         switch (condition) {
             case none:
-                System.out.println("CALL: " + String.format("0x%02X", n));
+                System.out.println("CALL: " + String.format("0x%02X", n) + " - ROUTINE");
                 Registers.sp -= 2;
                 Main.memory.writeShort(Registers.sp, Registers.pc);
 

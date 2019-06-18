@@ -23,6 +23,7 @@ public class CB {
 
         } else {
             System.out.println("Unknown Instruction: xCB"  + String.format("%02X", instructionHex));
+            System.exit(0);
         }
     }
 }
