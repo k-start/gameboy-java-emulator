@@ -32,14 +32,20 @@ public class CPU {
         Interrupts.flags = false;
 
         instructions[0x00] = new Instruction(OperationEnum.nop, "", 0);
+        instructions[0x0C] = new Instruction(OperationEnum.inc, "a", 0);
         instructions[0x0E] = new Instruction(OperationEnum.ld, "c", 1);
+        instructions[0x11] = new Instruction(OperationEnum.ld, "de", 2);
+        instructions[0x1A] = new Instruction(OperationEnum.ld_addr_r, "a", "de", 0);
         instructions[0x20] = new Instruction(OperationEnum.jr, "nz", 1);
         instructions[0x21] = new Instruction(OperationEnum.ld, "hl", 2);
         instructions[0x31] = new Instruction(OperationEnum.ld, "sp", 2);
         instructions[0x32] = new Instruction(OperationEnum.ldd, "hl", "a", 0);
         instructions[0x3E] = new Instruction(OperationEnum.ld, "a", 1);
+        instructions[0x77] = new Instruction(OperationEnum.ld_addr_w, "hl", "a", 0);
         instructions[0xAF] = new Instruction(OperationEnum.xor, "a", 0);
         instructions[0xCB] = new Instruction(OperationEnum.cb, "", 1);
+        instructions[0xCD] = new Instruction(OperationEnum.call, "", 2);
+        instructions[0xE0] = new Instruction(OperationEnum.ldh_imm, "a", 1);
         instructions[0xE2] = new Instruction(OperationEnum.ldh, "c", "a", 0);
     }
 
@@ -80,6 +86,16 @@ public class CPU {
                     break;
                 case ldh:
                     ldh(instruction.reg, value);
+                    break;
+                case ldh_imm:
+                    ldh_imm(value, instruction.reg);
+                    break;
+                case ld_addr_w:
+                    ld_addr_w(instruction.reg, value);
+                    break;
+                case ld_addr_r:
+                    ld_addr_r(instruction.reg, instruction.reg2);
+                    break;
                 case xor:
                     xor(instruction.reg);
                     break;
@@ -90,8 +106,16 @@ public class CPU {
                     // in this case instruction.reg is actually a condition, not a register name
                     jr(instruction.reg, value);
                     break;
+                case inc:
+                    inc(instruction.reg);
+                    break;
+                case call:
+                    System.out.println("CALL " + String.format("0x%04X", value) + " -- Routine");
+                    // in this case instruction.reg is actually a condition, not a register name
+                    call(instruction.reg, value);
+                    break;
                 default:
-                    System.out.println("Unknown Instruction: "  + String.format("0x%02X", instructionHex));
+                    System.out.println("Unimplemented Instruction: "  + String.format("0x%02X", instructionHex));
                     if(!Main.debugMode) {
                         System.exit(0);
                     }
@@ -115,22 +139,33 @@ public class CPU {
     }
 
     // save value into address pointed by reg
-    void ld_addr(String reg, int val) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    void ld_addr_w(String reg, int val) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         Method method = Registers.class.getMethod("get" + reg.toUpperCase());
         int address = (int)method.invoke(null);
 
         Main.memory.write(address, val);
     }
 
+    // load value into reg from address pointed to by reg2
+    void ld_addr_r(String reg, String reg2) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        Method method = Registers.class.getMethod("get" + reg2.toUpperCase());
+        int address = (int)method.invoke(null);
+
+        int value = Main.memory.read(address);
+
+        method = Registers.class.getMethod("set" + reg.toUpperCase(), int.class);
+        method.invoke(null, value);
+    }
+
     // save value into address pointed by reg and decrease reg
     void ldd(String reg, int val) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        ld_addr(reg, val);
+        ld_addr_w(reg, val);
 
         //decrement register
         Method method = Registers.class.getMethod("decrement" + reg.toUpperCase());
         method.invoke(null);
 
-        // maybe modify flags here
+        // maybe modify flags here - seems good though
     }
 
     // save value into address pointed to by (reg + 0xFF00)
@@ -139,6 +174,17 @@ public class CPU {
         int address = (int)method.invoke(null) + 0xFF00;
 
         Main.memory.write(address, val);
+        Registers.pc++;
+    }
+
+    // save register value into address pointed to by (8bit-imm + 0xFF00)
+    void ldh_imm(int immediate, String reg) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        int address = immediate + 0xFF00;
+
+        Method method = Registers.class.getMethod("get" + reg.toUpperCase());
+        int registerVal = (int)method.invoke(null) + 0xFF00;
+
+        Main.memory.write(address, registerVal);
     }
 
     // xor a against register
@@ -168,6 +214,35 @@ public class CPU {
                 } else {
                     // tick cpu
                 }
+                break;
+        }
+    }
+
+    void inc(String reg) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        Method method = Registers.class.getMethod("get" + reg.toUpperCase());
+        int value = (int)method.invoke(null);
+
+        value++;
+
+        // 8 bit
+        if(reg.length() == 1) {
+            if(value > 0xFF) {
+                value = value - 0xFF;
+            }
+        }
+
+        method = Registers.class.getMethod("set" + reg.toUpperCase(), int.class);
+        method.invoke(null, value);
+    }
+
+    void call(String condition, int value) {
+
+        switch (condition) {
+            case "":
+                Registers.sp -= 2;
+                Main.memory.writeShort(Registers.sp, Registers.pc);
+
+                Registers.pc = value;
                 break;
         }
     }

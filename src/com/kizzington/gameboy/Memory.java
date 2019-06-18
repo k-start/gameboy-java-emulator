@@ -8,6 +8,7 @@ public class Memory {
     public int[] vram;
     public int[] oam;
     public int[] ram;
+    public int[] hram;
 
     public Memory() {
         cartridge = new int[0x8000];
@@ -15,6 +16,7 @@ public class Memory {
         vram = new int[0x2000];
         oam = new int[0x100];
         ram = new int[0x2000];
+        hram = new int[0x80];
 
         for(int i = 0; i < io.length; i++) {
             io[i] = 0;
@@ -27,6 +29,9 @@ public class Memory {
         }
         for(int i = 0; i < ram.length; i++) {
             ram[i] = 0;
+        }
+        for(int i = 0; i < hram.length; i++) {
+            hram[i] = 0;
         }
     }
 
@@ -44,6 +49,8 @@ public class Memory {
             return oam[address - 0xfe00];
         } else if(address >= 0xFF00 && address <= 0xFF7F) {
             return io[address - 0xFF00];
+        } else if(address >= 0xFF80 && address <= 0xFFFE) {
+            return hram[address - 0xFF80];
         }
 
         else if(address == 0xff0f) return (Interrupts.flags ? 1 : 0);
@@ -65,6 +72,8 @@ public class Memory {
             oam[address - 0xfe00] = value;
         } else if(address >= 0xFF00 && address <= 0xFF7F) {
             io[address - 0xFF00] = value;
+        } else if(address >= 0xFF80 && address <= 0xFFFE) {
+            hram[address - 0xFF80] = value;
         } else {
             System.out.println("(W) Unknown memory address: " + String.format("0x%04X", address));
             System.exit(0);
