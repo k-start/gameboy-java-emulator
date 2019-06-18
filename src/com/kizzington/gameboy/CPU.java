@@ -1,14 +1,13 @@
 package com.kizzington.gameboy;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import com.kizzington.gameboy.Operators.*;
 
 public class CPU {
 
-    final int FLAGS_ZERO = 0x80;
-    final int FLAGS_NEGATIVE = 0x40;
-    final int FLAGS_HALFCARRY = 0x20;
-    final int FLAGS_CARRY = 0x10;
+    public final int FLAGS_ZERO = 0x80;
+    public final int FLAGS_NEGATIVE = 0x40;
+    public final int FLAGS_HALFCARRY = 0x20;
+    public final int FLAGS_CARRY = 0x10;
 
     long ticks = 0;
 
@@ -31,96 +30,39 @@ public class CPU {
         Interrupts.enable = false;
         Interrupts.flags = false;
 
-        instructions[0x00] = new Instruction(OperationEnum.nop, "", 0);
-        instructions[0x0C] = new Instruction(OperationEnum.inc, "a", 0);
-        instructions[0x0E] = new Instruction(OperationEnum.ld, "c", 1);
-        instructions[0x11] = new Instruction(OperationEnum.ld, "de", 2);
-        instructions[0x1A] = new Instruction(OperationEnum.ld_addr_r, "a", "de", 0);
-        instructions[0x20] = new Instruction(OperationEnum.jr, "nz", 1);
-        instructions[0x21] = new Instruction(OperationEnum.ld, "hl", 2);
-        instructions[0x31] = new Instruction(OperationEnum.ld, "sp", 2);
-        instructions[0x32] = new Instruction(OperationEnum.ldd, "hl", "a", 0);
-        instructions[0x3E] = new Instruction(OperationEnum.ld, "a", 1);
-        instructions[0x77] = new Instruction(OperationEnum.ld_addr_w, "hl", "a", 0);
-        instructions[0xAF] = new Instruction(OperationEnum.xor, "a", 0);
-        instructions[0xCB] = new Instruction(OperationEnum.cb, "", 1);
-        instructions[0xCD] = new Instruction(OperationEnum.call, "", 2);
-        instructions[0xE0] = new Instruction(OperationEnum.ldh_imm, "a", 1);
-        instructions[0xE2] = new Instruction(OperationEnum.ldh, "c", "a", 0);
+        instructions[0x00] = new Instruction(0);
+        instructions[0x0E] = new LD(OperandEnum.C, OperandEnum.n, 1);
+        instructions[0x11] = new LD(OperandEnum.DE, OperandEnum.nn, LD.LdType.read, 2);
+        instructions[0x1A] = new LD(OperandEnum.A, OperandEnum.DE, LD.LdType.read, 0);
+        instructions[0x20] = new JR(OperandEnum.n, JR.Condition.NZ, 1);
+        instructions[0x21] = new LD(OperandEnum.HL, OperandEnum.nn, LD.LdType.read, 2);
+        instructions[0x31] = new LD(OperandEnum.SP, OperandEnum.nn, LD.LdType.read, 2);
+        instructions[0x32] = new LD(OperandEnum.HL, OperandEnum.A, LD.LdType.write, LD.SpecialType.decrement, 0);
+        instructions[0x3E] = new LD(OperandEnum.A, OperandEnum.n, 1);
+        instructions[0x77] = new LD(OperandEnum.HL, OperandEnum.A, LD.LdType.write, 0);
+        instructions[0xAF] = new XOR(OperandEnum.A, 0);
+        instructions[0xCB] = new Instruction(true);
+        instructions[0xCD] = new CALL(OperandEnum.n, 2);
+        instructions[0xE0] = new LD(OperandEnum.n, OperandEnum.A, LD.LdType.read, 1);
+        instructions[0xE2] = new LD(OperandEnum.C, OperandEnum.A, LD.LdType.write, 1);
     }
 
-    public void step() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    public void step() {
 
         int instructionHex = Main.memory.read(Registers.pc++);
 
-        if(instructions[instructionHex] != null && instructions[instructionHex].operation != OperationEnum.unknown) {
+        if(instructions[instructionHex] != null) {
             System.out.println("Instruction: " + String.format("0x%02X", instructionHex));
 
             Instruction instruction = instructions[instructionHex];
 
-            int value = 0;
-            switch (instruction.cost) {
-                case 0:
-                    // load register into value if exists
-                    if (instruction.reg2 != null) {
-                        Method method = Registers.class.getMethod("get" + instruction.reg2.toUpperCase());
-                        value = (int) method.invoke(null);
-                    }
-                    break;
-                case 1:
-                    value = get8BitImm();
-                    break;
-                case 2:
-                    value = get16BitImm();
-                    break;
+            if(instruction.primaryOperand == OperandEnum.n ||  instruction.secondaryOperand == OperandEnum.n || instruction.cost == 1) {
+                instruction.n = get8BitImm();
+            } else if(instruction.primaryOperand == OperandEnum.nn || instruction.secondaryOperand == OperandEnum.nn || instruction.cost == 2) {
+                instruction.n = get16BitImm();
             }
 
-            switch (instruction.operation) {
-                case nop:
-                    break;
-                case ld:
-                    ld(instruction.reg, value);
-                    break;
-                case ldd:
-                    ldd(instruction.reg, value);
-                    break;
-                case ldh:
-                    ldh(instruction.reg, value);
-                    break;
-                case ldh_imm:
-                    ldh_imm(value, instruction.reg);
-                    break;
-                case ld_addr_w:
-                    ld_addr_w(instruction.reg, value);
-                    break;
-                case ld_addr_r:
-                    ld_addr_r(instruction.reg, instruction.reg2);
-                    break;
-                case xor:
-                    xor(instruction.reg);
-                    break;
-                case cb:
-                    Main.cb.step(value);
-                    break;
-                case jr:
-                    // in this case instruction.reg is actually a condition, not a register name
-                    jr(instruction.reg, value);
-                    break;
-                case inc:
-                    inc(instruction.reg);
-                    break;
-                case call:
-                    System.out.println("CALL " + String.format("0x%04X", value) + " -- Routine");
-                    // in this case instruction.reg is actually a condition, not a register name
-                    call(instruction.reg, value);
-                    break;
-                default:
-                    System.out.println("Unimplemented Instruction: "  + String.format("0x%02X", instructionHex));
-                    if(!Main.debugMode) {
-                        System.exit(0);
-                    }
-                    break;
-            }
+            instruction.execute();
         } else {
             System.out.println("Unknown Instruction: "  + String.format("0x%02X", instructionHex));
             if(!Main.debugMode) {
@@ -128,168 +70,44 @@ public class CPU {
             }
         }
 
-
 //        ticks += instructionTicks[instruction];
     }
 
-    // load value into reg
-    void ld(String reg, int val) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method = Registers.class.getMethod("set" + reg.toUpperCase(), int.class);
-        method.invoke(null, val);
-    }
-
-    // save value into address pointed by reg
-    void ld_addr_w(String reg, int val) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method = Registers.class.getMethod("get" + reg.toUpperCase());
-        int address = (int)method.invoke(null);
-
-        Main.memory.write(address, val);
-    }
-
-    // load value into reg from address pointed to by reg2
-    void ld_addr_r(String reg, String reg2) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method = Registers.class.getMethod("get" + reg2.toUpperCase());
-        int address = (int)method.invoke(null);
-
-        int value = Main.memory.read(address);
-
-        method = Registers.class.getMethod("set" + reg.toUpperCase(), int.class);
-        method.invoke(null, value);
-    }
-
-    // save value into address pointed by reg and decrease reg
-    void ldd(String reg, int val) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        ld_addr_w(reg, val);
-
-        //decrement register
-        Method method = Registers.class.getMethod("decrement" + reg.toUpperCase());
-        method.invoke(null);
-
-        // maybe modify flags here - seems good though
-    }
-
-    // save value into address pointed to by (reg + 0xFF00)
-    void ldh(String reg, int val) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method = Registers.class.getMethod("get" + reg.toUpperCase());
-        int address = (int)method.invoke(null) + 0xFF00;
-
-        Main.memory.write(address, val);
-        Registers.pc++;
-    }
-
-    // save register value into address pointed to by (8bit-imm + 0xFF00)
-    void ldh_imm(int immediate, String reg) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        int address = immediate + 0xFF00;
-
-        Method method = Registers.class.getMethod("get" + reg.toUpperCase());
-        int registerVal = (int)method.invoke(null) + 0xFF00;
-
-        Main.memory.write(address, registerVal);
-    }
-
-    // xor a against register
-    void xor(String reg) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method = Registers.class.getMethod("get" + reg.toUpperCase());
-        int value = (int)method.invoke(null);
-
-        Registers.a ^= value;
-
-        if(Registers.a != 0) {
-            flagsClear(FLAGS_ZERO);
-        } else {
-            flagsSet(FLAGS_ZERO);
-        }
-
-        flagsClear(FLAGS_CARRY | FLAGS_NEGATIVE | FLAGS_HALFCARRY);
-    }
-
-    void jr(String condition, int value) {
-        switch (condition.toLowerCase()) {
-            case "":
-                Registers.pc += value;
-                break;
-            case "nz":
-                if(!flagsIsZero()) {
-                    Registers.pc += (byte)value;
-                } else {
-                    // tick cpu
-                }
-                break;
-        }
-    }
-
-    void inc(String reg) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method = Registers.class.getMethod("get" + reg.toUpperCase());
-        int value = (int)method.invoke(null);
-
-        value++;
-
-        // 8 bit
-        if(reg.length() == 1) {
-            if(value > 0xFF) {
-                value = value - 0xFF;
-            }
-        }
-
-        method = Registers.class.getMethod("set" + reg.toUpperCase(), int.class);
-        method.invoke(null, value);
-    }
-
-    void call(String condition, int value) {
-
-        switch (condition) {
-            case "":
-                Registers.sp -= 2;
-                Main.memory.writeShort(Registers.sp, Registers.pc);
-
-                Registers.pc = value;
-                break;
-        }
-    }
-
-
-
-
-
-
-    int get8BitImm() {
+    public int get8BitImm() {
         return Main.memory.read(Registers.pc++);
     }
 
-    int get16BitImm() {
+    public int get16BitImm() {
         int imm = Main.memory.readShort(Registers.pc);
         Registers.pc += 2;
         return imm;
     }
 
-
-
-
-    boolean flagsIsZero() {
+    public boolean flagsIsZero() {
         return (Registers.f & FLAGS_ZERO) != 0;
     }
 
-    boolean flagsIsNegative() {
+    public boolean flagsIsNegative() {
         return (Registers.f & FLAGS_NEGATIVE) != 0;
     }
 
-    boolean flagsIsCarry() {
+    public boolean flagsIsCarry() {
         return (Registers.f & FLAGS_CARRY) != 0;
     }
 
-    boolean flagsIsHalfCarry() {
+    public boolean flagsIsHalfCarry() {
         return (Registers.f & FLAGS_HALFCARRY) != 0;
     }
 
-    boolean flags_isset(int x) {
+    public boolean flags_isset(int x) {
         return (Registers.f & x) != 0;
     }
 
-    boolean flagsSet(int x) {
+    public boolean flagsSet(int x) {
         return (Registers.f |= x) != 0;
     }
 
-    boolean flagsClear(int x) {
+    public boolean flagsClear(int x) {
         return (Registers.f &= ~(x)) != 0;
     }
 }

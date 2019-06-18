@@ -2,8 +2,8 @@ package com.kizzington.gameboy;
 
 public class Registers {
 
-    static int a, b, c, d, e, h, l, f, ime;
-    static int pc, sp;
+    public static int a, b, c, d, e, h, l, f, ime;
+    public static int pc, sp;
 
     public static void setAF(int value) {
         a = value >> 8;

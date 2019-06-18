@@ -1,4 +1,4 @@
-package com.kizzington.gameboy;
+package com.kizzington.gameboy.Operators;
 
 public enum OperationEnum {
     unknown, nop,

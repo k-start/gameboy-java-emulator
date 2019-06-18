@@ -1,7 +1,6 @@
 package com.kizzington.gameboy;
 
 import javax.swing.*;
-import java.lang.reflect.InvocationTargetException;
 
 public class Main {
 
@@ -41,11 +40,7 @@ public class Main {
             label = new JTextArea("test\ntest");
             label.setBounds(10, 60, 360, 280);
 
-            try {
-                cpu.step();
-            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-                e.printStackTrace();
-            }
+            cpu.step();
 
             label.setText("AF: " + String.format("%04X", Registers.getAF())
                     + "\nBC: " + String.format("%04X", Registers.getBC())
@@ -85,11 +80,7 @@ public class Main {
                         + "\nH: " + cpu.flagsIsHalfCarry()
                         + "\nC: " + cpu.flagsIsCarry());
 
-                try {
-                    cpu.step();
-                } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-                    e.printStackTrace();
-                }
+                cpu.step();
             });
         } else {
             run();
@@ -98,11 +89,7 @@ public class Main {
 
     public void run() {
         while(running) {
-            try {
-                cpu.step();
-            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-                e.printStackTrace();
-            }
+            cpu.step();
         }
     }
 }

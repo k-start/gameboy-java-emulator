@@ -35,7 +35,7 @@ public class Memory {
         }
     }
 
-    int read(int address) {
+    public int read(int address) {
 
         if(address <= 0x7fff) {
             return cartridge[address];
@@ -62,7 +62,7 @@ public class Memory {
         return 0;
     }
 
-    void write(int address, int value) {
+    public void write(int address, int value) {
 
         if(address >= 0x8000 && address <= 0x9fff) {
             vram[address - 0x8000] = value;
@@ -80,11 +80,11 @@ public class Memory {
         }
     }
 
-    int readShort(int address) {
+    public int readShort(int address) {
         return read(address) | (read(address + 1) << 8);
     }
 
-    void writeShort(int address, int value) {
+    public void writeShort(int address, int value) {
         write(address, (value & 0xff00));
         write(address + 1, (value & 0x00ff));
     }

@@ -1,47 +1,28 @@
 package com.kizzington.gameboy;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import com.kizzington.gameboy.Operators.CB.BIT;
+import com.kizzington.gameboy.Operators.Instruction;
+import com.kizzington.gameboy.Operators.OperandEnum;
 
 public class CB {
 
     public Instruction[] instructions = new Instruction[0xFF];
 
     public CB() {
-        instructions[0x7C] = new Instruction(OperationEnum.bit, "h", 7);
+        instructions[0x7C] = new BIT(OperandEnum.H, 7);
     }
 
-    public void step(int instructionHex) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    public void step(int instructionHex) {
 
-        if(instructions[instructionHex] != null && instructions[instructionHex].operation != OperationEnum.unknown) {
+        if(instructions[instructionHex] != null) {
             System.out.println("Instruction: xCB"  + String.format("%02X", instructionHex));
 
             Instruction instruction = instructions[instructionHex];
 
-            switch (instruction.operation) {
-                case bit:
-                    bit(instruction.reg, instruction.cost);
-                    break;
-            }
+            instruction.execute();
+
         } else {
             System.out.println("Unknown Instruction: xCB"  + String.format("%02X", instructionHex));
         }
-    }
-
-    // test bit
-    public void bit(String reg, int bit) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method = Registers.class.getMethod("get" + reg.toUpperCase());
-        int value = (int)method.invoke(null);
-
-        boolean test = ((value >> bit) & 1) != 0;
-
-        if(!test) {
-            Main.cpu.flagsSet(Main.cpu.FLAGS_ZERO);
-        } else {
-            Main.cpu.flagsClear(Main.cpu.FLAGS_ZERO);
-        }
-
-        Main.cpu.flagsSet(Main.cpu.FLAGS_HALFCARRY);
-        Main.cpu.flagsSet(Main.cpu.FLAGS_NEGATIVE);
     }
 }
