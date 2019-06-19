@@ -81,11 +81,11 @@ public class Memory {
     }
 
     public int readShort(int address) {
-        return read(address) | (read(address + 1) << 8);
+        return (read(address+1) << 8) | read(address);
     }
 
     public void writeShort(int address, int value) {
-        write(address, (value & 0xff00));
-        write(address + 1, (value & 0x00ff));
+        write(address, (value & 0x00FF));
+        write(address + 1, (value & 0xFF00) >> 8);
     }
 }
