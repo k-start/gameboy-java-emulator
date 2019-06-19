@@ -33,6 +33,17 @@ public class JR extends Instruction {
                     // tick cpu
                 }
                 break;
+            case Z:
+                if(Main.cpu.flagsIsZero()) {
+                    Registers.pc += (byte)n;
+                } else {
+                    // tick cpu
+                }
+                break;
+            default:
+                System.out.println("Unimplemented JR");
+                System.exit(0);
+                break;
         }
     }
 }

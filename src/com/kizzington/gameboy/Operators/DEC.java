@@ -1,6 +1,7 @@
 package com.kizzington.gameboy.Operators;
 
 import com.kizzington.gameboy.Main;
+import com.kizzington.gameboy.Registers;
 
 public class DEC extends Instruction {
 
@@ -23,10 +24,10 @@ public class DEC extends Instruction {
         // deal with overflow
         int newVal = primaryOperand.getValue();
         if(primaryOperand.name().length() == 1 && newVal < 0x00) {
-            primaryOperand.setValue(0xFF + newVal);
+            primaryOperand.setValue(0xFF + newVal + 1);
             newVal = primaryOperand.getValue();
         } else if(primaryOperand.name().length() == 2 && newVal < 0x0000) {
-            primaryOperand.setValue(0xFFFF + newVal);
+            primaryOperand.setValue(0xFFFF + newVal + 1);
             newVal = primaryOperand.getValue();
         }
 

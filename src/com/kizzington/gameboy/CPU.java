@@ -31,9 +31,11 @@ public class CPU {
         Interrupts.flags = false;
 
         instructions[0x00] = new Instruction(0);
+        instructions[0x04] = new INC(OperandEnum.B, 0);
         instructions[0x05] = new DEC(OperandEnum.B, 0);
         instructions[0x06] = new Instruction(OperandEnum.B, OperandEnum.n, 1);
         instructions[0x0C] = new INC(OperandEnum.C, 0);
+        instructions[0x0D] = new DEC(OperandEnum.C, 0);
         instructions[0x0E] = new LD(OperandEnum.C, OperandEnum.n, 1);
         instructions[0x11] = new LD(OperandEnum.DE, OperandEnum.nn, LD.LdType.read, 2);
         instructions[0x13] = new INC(OperandEnum.DE, 0);
@@ -43,10 +45,14 @@ public class CPU {
         instructions[0x21] = new LD(OperandEnum.HL, OperandEnum.nn, LD.LdType.read, 2);
         instructions[0x22] = new LD(OperandEnum.HL, OperandEnum.A, LD.LdType.write, LD.SpecialType.increment, 0);
         instructions[0x23] = new INC(OperandEnum.HL, 0);
+        instructions[0x28] = new JR(OperandEnum.n, JR.Condition.Z, 1);
         instructions[0x31] = new LD(OperandEnum.SP, OperandEnum.nn, LD.LdType.read, 2);
         instructions[0x32] = new LD(OperandEnum.HL, OperandEnum.A, LD.LdType.write, LD.SpecialType.decrement, 0);
+        instructions[0x3D] = new DEC(OperandEnum.A, 0);
         instructions[0x3E] = new LD(OperandEnum.A, OperandEnum.n, 1);
         instructions[0x4F] = new LD(OperandEnum.C, OperandEnum.A, 0);
+        instructions[0x57] = new LD(OperandEnum.D, OperandEnum.A, 0);
+        instructions[0x67] = new LD(OperandEnum.H, OperandEnum.A, 0);
         instructions[0x77] = new LD(OperandEnum.HL, OperandEnum.A, LD.LdType.write, 0);
         instructions[0x7B] = new LD(OperandEnum.A, OperandEnum.E, 0);
         instructions[0xAF] = new XOR(OperandEnum.A, 0);
@@ -57,6 +63,7 @@ public class CPU {
         instructions[0xCD] = new CALL(OperandEnum.nn, 2);
         instructions[0xE0] = new LD(OperandEnum.n, OperandEnum.A, LD.LdType.read, 1);
         instructions[0xE2] = new LD(OperandEnum.C, OperandEnum.A, LD.LdType.write, 0);
+        instructions[0xEA] = new LD(OperandEnum.nn, OperandEnum.A, LD.LdType.write, 2);
         instructions[0xFE] = new CP(OperandEnum.n, 1);
     }
 
@@ -82,6 +89,10 @@ public class CPU {
                 System.exit(0);
             }
         }
+
+//        if(instructionHex == 0xEA) {
+//            System.exit(0);
+//        }
 
 //        ticks += instructionTicks[instruction];
     }

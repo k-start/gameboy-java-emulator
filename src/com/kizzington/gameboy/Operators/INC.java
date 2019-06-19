@@ -23,10 +23,10 @@ public class INC extends Instruction {
         // deal with overflow
         int newVal = primaryOperand.getValue();
         if(primaryOperand.name().length() == 1 && newVal > 0xFF) {
-            primaryOperand.setValue(newVal - 0xFF);
+            primaryOperand.setValue(newVal - 0xFF - 1);
             newVal = primaryOperand.getValue();
         } else if(primaryOperand.name().length() == 2 && newVal > 0xFFFF) {
-            primaryOperand.setValue(newVal - 0xFFFF);
+            primaryOperand.setValue(newVal - 0xFFFF - 1);
             newVal = primaryOperand.getValue();
         }
 
