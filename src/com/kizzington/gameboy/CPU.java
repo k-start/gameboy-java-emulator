@@ -35,6 +35,7 @@ public class CPU {
         instructions[0x0C] = new INC(OperandEnum.C, 0);
         instructions[0x0E] = new LD(OperandEnum.C, OperandEnum.n, 1);
         instructions[0x11] = new LD(OperandEnum.DE, OperandEnum.nn, LD.LdType.read, 2);
+        instructions[0x17] = new RLA(OperandEnum.A, 0);
         instructions[0x1A] = new LD(OperandEnum.A, OperandEnum.DE, LD.LdType.read, 0);
         instructions[0x20] = new JR(OperandEnum.n, JR.Condition.NZ, 1);
         instructions[0x21] = new LD(OperandEnum.HL, OperandEnum.nn, LD.LdType.read, 2);
@@ -44,6 +45,7 @@ public class CPU {
         instructions[0x4F] = new LD(OperandEnum.C, OperandEnum.A, 0);
         instructions[0x77] = new LD(OperandEnum.HL, OperandEnum.A, LD.LdType.write, 0);
         instructions[0xAF] = new XOR(OperandEnum.A, 0);
+        instructions[0xC1] = new POP(OperandEnum.BC, 0);
         instructions[0xC5] = new PUSH(OperandEnum.BC, 0);
         instructions[0xCB] = new Instruction(true);
         instructions[0xCD] = new CALL(OperandEnum.n, 2);

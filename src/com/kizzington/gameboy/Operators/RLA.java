@@ -1,12 +1,10 @@
-package com.kizzington.gameboy.Operators.CB;
+package com.kizzington.gameboy.Operators;
 
 import com.kizzington.gameboy.Main;
-import com.kizzington.gameboy.Operators.Instruction;
-import com.kizzington.gameboy.Operators.OperandEnum;
 
-public class RL extends Instruction {
+public class RLA extends Instruction {
 
-    public RL(OperandEnum primaryOperand, int cost) {
+    public RLA(OperandEnum primaryOperand, int cost) {
         super(primaryOperand, cost);
     }
 
@@ -25,13 +23,7 @@ public class RL extends Instruction {
         value <<= 1;
         value += carry;
 
-        if(value == 0) {
-            Main.cpu.flagsSet(Main.cpu.FLAGS_ZERO);
-        } else {
-            Main.cpu.flagsClear(Main.cpu.FLAGS_ZERO);
-        }
-
-        Main.cpu.flagsClear(Main.cpu.FLAGS_NEGATIVE | Main.cpu.FLAGS_HALFCARRY);
+        Main.cpu.flagsClear(Main.cpu.FLAGS_NEGATIVE | Main.cpu.FLAGS_ZERO | Main.cpu.FLAGS_HALFCARRY);
 
         primaryOperand.setValue(value);
     }
